@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: nocomment
+  profiles:
+    include:
+      - secret
+  # PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${spring.application.name}
+    username: ${spring.application.name}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  # MongoDB
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: ${spring.application.name}
+      username: ${spring.application.name}
+
+
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+logging:
+  level:
+    io.usnack: debug
+
+server:
+  port: 8080
