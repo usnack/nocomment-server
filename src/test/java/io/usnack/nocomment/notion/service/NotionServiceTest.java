@@ -2,11 +2,11 @@ package io.usnack.nocomment.notion.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.usnack.nocomment.notion.service.dto.NotionBlockChildren;
+import io.usnack.nocomment.notion.service.dto.NotionBlockChildrenResponse;
+import io.usnack.nocomment.notion.service.dto.NotionCommentResponse;
 import io.usnack.nocomment.notion.service.model.NotionBlock;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,16 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.util.Map;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @ActiveProfiles("secret")
@@ -53,7 +44,7 @@ class NotionServiceTest {
 
     static Stream<String> blockIds() {
         return Stream.of(
-                "110a4919eefa8056aa60d53001f72e4c"
+                "110a4919-eefa-809d-9545-ea54320cdb64"
         );
     }
 
@@ -104,9 +95,9 @@ class NotionServiceTest {
 
         Disposable subscription = response.subscribe(
                 result -> {
-                    NotionBlockChildren notionBlock = null;
+                    NotionBlockChildrenResponse notionBlock = null;
                     try {
-                        notionBlock = objectMapper.readValue(result, NotionBlockChildren.class);
+                        notionBlock = objectMapper.readValue(result, NotionBlockChildrenResponse.class);
                         log.debug("result: {}", notionBlock);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
@@ -126,8 +117,44 @@ class NotionServiceTest {
 
     }
 
-    @Test
-    void isCommentUpdated() {
+
+    @MethodSource("blockIds")
+    @ParameterizedTest
+    void isCommentUpdated(String blockId) {
+        final String latestCommentId = "110a4919-eefa-8068-81e0-001d6d4becc6";
+
+        Mono<String> response = client.get()
+                .uri(uri -> uri
+                        .pathSegment("comments")
+                        .queryParam("block_id", blockId)
+                        .queryParam("start_cursor", latestCommentId)
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class);
+
+        Disposable subscription = response.subscribe(
+                result -> {
+                    log.debug("result: {}", result);
+                    NotionCommentResponse apiResponse = null;
+                    try {
+                        apiResponse = objectMapper.readValue(result, NotionCommentResponse.class);
+                        boolean isCommentUpdated = apiResponse.hasMore();
+                        log.debug("result: {} / isCommentUpdated: {}", apiResponse, isCommentUpdated);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                error -> log.error("error", error)
+        );
+
+        while(!subscription.isDisposed()) {
+            try {
+                log.debug("waiting for subscription");
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
     }
 }

@@ -2,12 +2,13 @@ package io.usnack.nocomment.notion.service.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.usnack.nocomment.notion.service.model.NotionBlock;
+import io.usnack.nocomment.notion.service.model.NotionComment;
 
 import java.util.List;
 
-public record NotionBlockChildren(
+public record NotionCommentResponse(
         @JsonProperty("results")
-        List<NotionBlock> children,
+        List<NotionComment> comments,
         @JsonProperty("next_cursor")
         String nextCursor,
         @JsonProperty("has_more")
