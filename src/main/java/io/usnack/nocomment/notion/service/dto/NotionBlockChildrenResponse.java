@@ -12,4 +12,13 @@ public record NotionBlockChildrenResponse(
         String nextCursor,
         @JsonProperty("has_more")
         boolean hasMore
-) { }
+) {
+        @Override
+        public String toString() {
+                return "NotionBlockChildrenResponse{" +
+                        "children=" + children +
+                        ", nextCursor='" + nextCursor + '\'' +
+                        ", hasMore=" + hasMore +
+                        '}';
+        }
+}

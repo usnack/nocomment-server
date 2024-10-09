@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.usnack.nocomment.notion.service.model.NotionBlock;
 import io.usnack.nocomment.notion.service.model.NotionComment;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public record NotionCommentResponse(

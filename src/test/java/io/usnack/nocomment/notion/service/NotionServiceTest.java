@@ -131,7 +131,6 @@ class NotionServiceTest {
                         .build())
                 .retrieve()
                 .bodyToMono(String.class);
-
         Disposable subscription = response.subscribe(
                 result -> {
                     log.debug("result: {}", result);
