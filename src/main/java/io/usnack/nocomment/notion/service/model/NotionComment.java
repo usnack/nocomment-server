@@ -7,26 +7,21 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.deser.Deserializers;
-import io.usnack.nocomment.notion.service.util.CreatedByDeserializer;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
+@ToString
 @Getter
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class NotionComment extends NotionData {
     private String id;
-    @JsonProperty("parent")
-    @JsonDeserialize(using = ParentBlockDeserializer.class)
-    private String parentBlockId;
     private String discussion_id;
     private ZonedDateTime created_time;
-    @JsonProperty("created_by")
-    @JsonDeserialize(using = CreatedByDeserializer.class)
-    private String created_by;
     private ZonedDateTime last_edited_time;
     private List<RichText> rich_text;
 
@@ -36,5 +31,10 @@ public class NotionComment extends NotionData {
             JsonNode node = p.getCodec().readTree(p);
             return node.get("block_id").asText();
         }
+    }
+
+    public String getParentBlockId() {
+        LinkedHashMap<String, Object> parent = (LinkedHashMap<String, Object>) getExtraProps().getOrDefault("parent", new LinkedHashMap<>());
+        return Optional.ofNullable(parent.get("block_id")).map(String.class::cast).orElse("");
     }
 }
