@@ -5,6 +5,7 @@ import io.usnack.nocomment.notion.repository.entity.NotionBlockMeta;
 import io.usnack.nocomment.notion.service.dto.NotionBlockChildrenResponse;
 import io.usnack.nocomment.notion.service.dto.NotionCommentResponse;
 import io.usnack.nocomment.notion.service.model.NotionBlock;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.net.URI;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+@Slf4j
 @Service
 public class BlockingNotionService implements NotionService {
     private final WebClient notionClient;
@@ -85,8 +87,15 @@ public class BlockingNotionService implements NotionService {
                 .uri(uriBuildFunction)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + notionApiKey)
                 .retrieve()
-                .onStatus(status -> status.value() == 429, res ->
-                        Mono.error(new HttpRetryException("Rate limited", res.statusCode().value())))
+                .onStatus(
+                        status -> status.value() == 429,
+                        res -> {
+                            HttpRetryException rateLimitedException = new HttpRetryException("Rate limited", res.statusCode().value());
+                            log.warn("rate limit..", rateLimitedException);
+                            return Mono.error(rateLimitedException);    
+                        }
+
+                )
                 .bodyToMono(returnType)
                 .retryWhen(notionRetrySpec)
                 .block();

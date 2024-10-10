@@ -1,6 +1,9 @@
 package io.usnack.nocomment.notion.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import io.usnack.nocomment.notion.repository.NotionBlockMetaRepository;
+import io.usnack.nocomment.notion.repository.entity.NotionBlockMeta;
 import io.usnack.nocomment.notion.service.dto.NotionBlockChildrenResponse;
 import io.usnack.nocomment.notion.service.exception.NotionAPIFailureException;
 import io.usnack.nocomment.notion.service.model.NotionBlock;
@@ -12,8 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -26,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.net.HttpRetryException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +61,11 @@ class BlockingNotionServiceTest {
 
     @BeforeAll
     static void setUp() {
+        loadSecretProperties();
+        setupLogging();
+    }
+
+    private static void loadSecretProperties() {
         Yaml yaml = new Yaml();
         Map<String, Object> properties = null;
         try {
@@ -64,6 +75,15 @@ class BlockingNotionServiceTest {
         }
         NOTION_API_KEY = (String) ((Map<String, Object>) properties.get("notion")).get("api-key");
     }
+
+    private static void setupLogging() {
+        // SLF4J를 통해 Logback의 루트 로거를 가져옵니다.
+        Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        rootLogger.setLevel(Level.INFO);
+        Logger appLogger = (Logger) LoggerFactory.getLogger("io.usnack.nocomment");
+        appLogger.setLevel(Level.DEBUG);
+    }
+
 
     @Nested
     class WhenFindingNotionBlock {
@@ -102,11 +122,19 @@ class BlockingNotionServiceTest {
 
     @Nested
     class WhenCheckingIfIsCommentUpdated {
-        private final String NOTION_API_KEY = "NOTION_API_KEY";
-        private final String BLOCK_ID = "BLOCK_ID";
+        private final String BLOCK_ID = "110a4919-eefa-809d-9545-ea54320cdb64";
+        private final String LATEST_COMMENT_ID = "110a4919-eefa-8068-81e0-001d6d4becc6";
 
         @BeforeEach
         void setup() {
+        }
+
+        @Test
+        void baseTest(){
+            Mockito.when(notionBlockMetaRepository.findById(BLOCK_ID))
+                    .thenReturn(Optional.of(new NotionBlockMeta(BLOCK_ID, LATEST_COMMENT_ID)));
+            boolean commentUpdated = underTest.isCommentUpdated(NOTION_API_KEY, BLOCK_ID);
+            log.debug("comment Updated : {}", commentUpdated);
         }
     }
 }
